@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct TapTilesApp: App {
+    // MARK: - Body
+
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -12,7 +12,9 @@ struct TapTilesApp: App {
     // MARK: - Body
 
     var body: some Scene {
+        // Creates the app's main window.
         WindowGroup {
+            // Places the main game screen inside the window.
             ContentView()
         }
     }

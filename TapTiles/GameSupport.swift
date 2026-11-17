@@ -29,6 +29,27 @@ struct GameTile: Identifiable, Equatable {
     }
 }
 
+// MARK: - Game song
+
+struct GameSong: Identifiable, Hashable {
+    // Gives each song a stable identity for SwiftUI lists.
+    let id: String
+
+    // Stores the name shown in the song menu.
+    let title: String
+
+    // Stores the artist or description shown below the title.
+    let subtitle: String
+
+    // Provides the songs currently available in the menu.
+    static let availableSongs = [
+        GameSong(id: "neon-pulse", title: "Neon Pulse", subtitle: "2:48"),
+        GameSong(id: "midnight-drive", title: "Midnight Drive", subtitle: "3:12"),
+        GameSong(id: "pixel-rush", title: "Pixel Rush", subtitle: "1:56"),
+        GameSong(id: "starlight", title: "Starlight", subtitle: "3:05")
+    ]
+}
+
 // MARK: - Game theme
 
 enum GameTheme {

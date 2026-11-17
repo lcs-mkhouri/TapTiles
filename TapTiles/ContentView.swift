@@ -10,8 +10,14 @@ import SwiftUI
 struct ContentView: View {
     // MARK: - Stored properties
 
+    // Tracks which screen the player is currently viewing.
+    @State private var currentScreen: AppScreen = .start
+
     // Stores the game's state and keeps the view updated when that state changes.
     @State private var viewModel = GameViewModel()
+
+    // Stores the song selected for the current game.
+    @State private var selectedSong: GameSong?
 
     // Tracks whether this view currently receives keyboard input.
     @FocusState private var isKeyboardFocused: Bool
@@ -26,21 +32,22 @@ struct ContentView: View {
                 // Extends the background into the safe-area margins.
                 .ignoresSafeArea()
 
-            // Stacks the score, board, and controls vertically.
-            VStack(spacing: GameTheme.largeSpacing) {
-                // Shows the current score, best score, and streak.
-                ScoreHeaderView(viewModel: viewModel)
-
-                // Displays the falling tiles and target line.
-                GameBoardView(viewModel: viewModel)
-                    // Prevents the board from growing beyond a readable size.
-                    .frame(maxWidth: 520, maxHeight: 760)
-
-                // Shows the keyboard instructions and play/pause button.
-                GameControlsView(viewModel: viewModel)
+            // Shows the start screen, song menu, or game.
+            switch currentScreen {
+            case .start:
+                StartScreenView {
+                    currentScreen = .songSelection
+                }
+            case .songSelection:
+                SongSelectionView { song in
+                    selectedSong = song
+                    viewModel.resetGame()
+                    viewModel.startGame()
+                    currentScreen = .game
+                }
+            case .game:
+                gameView
             }
-            // Adds space around the main game layout.
-            .padding(GameTheme.largePadding)
         }
         // Gives the game window a useful minimum size.
         .frame(minWidth: 430, minHeight: 760)
@@ -60,6 +67,31 @@ struct ContentView: View {
     }
 
     // MARK: - Computed properties
+
+    private var gameView: some View {
+        // Stacks the score, health, board, and controls vertically.
+        VStack(spacing: GameTheme.largeSpacing) {
+            // Shows the current score, best score, and streak.
+            ScoreHeaderView(viewModel: viewModel, song: selectedSong)
+
+            // Shows the player's health in the top middle of the game.
+            HealthBarView(viewModel: viewModel)
+
+            // Displays the falling tiles and target line.
+            GameBoardView(viewModel: viewModel)
+                // Prevents the board from growing beyond a readable size.
+                .frame(maxWidth: 520, maxHeight: 760)
+
+            // Shows the keyboard instructions and play/pause button.
+            GameControlsView(viewModel: viewModel) {
+                // Stops the current round before returning to song selection.
+                viewModel.resetGame()
+                currentScreen = .songSelection
+            }
+        }
+        // Adds space around the main game layout.
+        .padding(GameTheme.largePadding)
+    }
 
     private var keyboardKeys: Set<KeyEquivalent> {
         // Lists every key that the game understands.
@@ -95,6 +127,14 @@ struct ContentView: View {
         // Prevents the key press from being handled by another control.
         return .handled
     }
+}
+
+// MARK: - App screen
+
+private enum AppScreen {
+    case start
+    case songSelection
+    case game
 }
 
 #Preview {

@@ -11,6 +11,9 @@ struct GameControlsView: View {
     // Reads game state so the button can show play or pause.
     let viewModel: GameViewModel
 
+    // Runs when the player leaves the current song.
+    let exitToSongMenu: () -> Void
+
     var body: some View {
         // Places keyboard instructions and the play/pause button in one row.
         HStack(spacing: 14) {
@@ -49,6 +52,11 @@ struct GameControlsView: View {
             .foregroundStyle(.black)
             // Gives VoiceOver a meaningful button name.
             .accessibilityLabel(viewModel.isPlaying ? "Pause game" : "Start game")
+
+            // Returns to the song menu.
+            Button("Exit", systemImage: "xmark", action: exitToSongMenu)
+                .buttonStyle(.bordered)
+                .tint(.white)
         }
         // Uses compact text for the control row.
         .font(.caption)
@@ -56,6 +64,40 @@ struct GameControlsView: View {
         .bold()
         // Uses a muted color for secondary controls.
         .foregroundStyle(.white.secondary)
+    }
+}
+
+// MARK: - Health bar
+
+struct HealthBarView: View {
+    // Reads the current health so the line updates during play.
+    let viewModel: GameViewModel
+
+    var body: some View {
+        // Keeps the health line centered above the board.
+        VStack(spacing: 4) {
+            // Uses a white line whose length represents remaining health.
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    // Draws the empty part of the health line.
+                    Capsule()
+                        .fill(.white.opacity(0.2))
+
+                    // Draws the remaining health in white.
+                    Capsule()
+                        .fill(.white)
+                        .frame(
+                            width: proxy.size.width
+                                * CGFloat(viewModel.health)
+                                / CGFloat(GameViewModel.maximumHealth)
+                        )
+                }
+            }
+            .frame(width: 160, height: 6)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Health")
+        .accessibilityValue("\(viewModel.health) out of \(GameViewModel.maximumHealth)")
     }
 }
 
@@ -108,6 +150,9 @@ struct ScoreHeaderView: View {
     // Reads the current score values from the game model.
     let viewModel: GameViewModel
 
+    // Stores the selected song shown above the board.
+    let song: GameSong?
+
     var body: some View {
         // Places the title on the left and scores on the right.
         HStack {
@@ -123,6 +168,13 @@ struct ScoreHeaderView: View {
                 Text("Keep the rhythm going")
                     .font(.subheadline)
                     .foregroundStyle(.white.secondary)
+
+                // Shows which song is selected for this round.
+                if let song {
+                    Text(song.title)
+                        .font(.caption)
+                        .foregroundStyle(GameTheme.accent)
+                }
             }
 
             // Pushes the score items to the trailing edge.

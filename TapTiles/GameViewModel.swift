@@ -38,6 +38,12 @@ final class GameViewModel {
     // Counts successful taps in a row.
     private(set) var streak = 0
 
+    // Stores the player's current health.
+    private(set) var health = 12
+
+    // Sets the maximum health for every round.
+    static let maximumHealth = 12
+
     // Indicates whether the game is currently moving tiles.
     private(set) var isPlaying = false
 
@@ -122,6 +128,9 @@ final class GameViewModel {
         // Resets the consecutive-hit count.
         streak = 0
 
+        // Restores the player's health to its maximum.
+        health = Self.maximumHealth
+
         // Clears the lane that caused the previous game over.
         missedColumn = nil
 
@@ -144,11 +153,16 @@ final class GameViewModel {
 
         // Finds a tile touching the target line in the selected lane.
         guard let tileIndex = tappableTileIndex(in: column) else {
+            // Removes one health point when the player taps where no tile can be hit.
+            loseHealth(amount: 1)
             return
         }
 
         // Awards one point for a successful tap.
         score += 1
+
+        // Restores one health point after a successful tap without exceeding the cap.
+        health = min(Self.maximumHealth, health + 1)
 
         // Increases the consecutive-hit count.
         streak += 1
@@ -174,7 +188,7 @@ final class GameViewModel {
 
             // Ends the game if this tile has reached the bottom.
             if updatedTile.progress >= 1 {
-                endGame(missedColumn: updatedTile.column)
+                handleMissedTile(updatedTile)
                 return
             }
 
@@ -267,15 +281,35 @@ final class GameViewModel {
         return bestIndex
     }
 
-    private func endGame(missedColumn: Int) {
+    private func handleMissedTile(_ tile: GameTile) {
+        // Removes the missed tile so it cannot reduce health more than once.
+        if let tileIndex = tiles.firstIndex(where: { existingTile in
+            existingTile.id == tile.id
+        }) {
+            tiles.remove(at: tileIndex)
+        }
+
+        // Stores the lane that was missed for future UI use.
+        missedColumn = tile.column
+
+        // Removes four health points when a tile reaches the bottom.
+        loseHealth(amount: 4)
+    }
+
+    private func loseHealth(amount: Int) {
+        // Removes the requested health amount without allowing health to become negative.
+        health = max(0, health - amount)
+
+        // Keeps the game running while the player still has health remaining.
+        guard health == 0 else {
+            return
+        }
+
         // Stops the game loop from moving more tiles.
         isPlaying = false
 
         // Shows the game-over overlay.
         isGameOver = true
-
-        // Stores the lane that was missed for future UI use.
-        self.missedColumn = missedColumn
 
         // Breaks the successful-tap streak.
         streak = 0

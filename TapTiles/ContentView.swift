@@ -19,6 +19,9 @@ struct ContentView: View {
     // Stores the song selected for the current game.
     @State private var selectedSong: GameSong?
 
+    // Stores the volume selected in the configuration screen.
+    @State private var volume = 0.75
+
     // Tracks whether this view currently receives keyboard input.
     @FocusState private var isKeyboardFocused: Bool
 
@@ -35,8 +38,17 @@ struct ContentView: View {
             // Shows the start screen, song menu, or game.
             switch currentScreen {
             case .start:
-                StartScreenView {
-                    currentScreen = .songSelection
+                StartScreenView(
+                    showSongMenu: {
+                        currentScreen = .songSelection
+                    },
+                    showConfiguration: {
+                        currentScreen = .configuration
+                    }
+                )
+            case .configuration:
+                ConfigurationView(volume: $volume) {
+                    currentScreen = .start
                 }
             case .songSelection:
                 SongSelectionView { song in
@@ -133,6 +145,7 @@ struct ContentView: View {
 
 private enum AppScreen {
     case start
+    case configuration
     case songSelection
     case game
 }

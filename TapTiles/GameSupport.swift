@@ -46,7 +46,7 @@ struct GameSong: Identifiable, Hashable {
         GameSong(id: "neon-pulse", title: "Neon Pulse", subtitle: "2:48"),
         GameSong(id: "midnight-drive", title: "Midnight Drive", subtitle: "3:12"),
         GameSong(id: "pixel-rush", title: "Pixel Rush", subtitle: "1:56"),
-        GameSong(id: "starlight", title: "Starlight", subtitle: "3:05")
+        GameSong(id: "Infinite madness", title: "Infinte Madness", subtitle: "∞")
     ]
 }
 

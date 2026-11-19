@@ -11,6 +11,9 @@ struct StartScreenView: View {
     // Runs when the player chooses to open the song menu.
     let showSongMenu: () -> Void
 
+    // Runs when the player chooses to open configuration.
+    let showConfiguration: () -> Void
+
     var body: some View {
         VStack(spacing: 28) {
             Image(systemName: "music.note.list")
@@ -34,8 +37,57 @@ struct StartScreenView: View {
                 .foregroundStyle(.black)
                 .controlSize(.large)
                 .keyboardShortcut(.return)
+
+            Button("Configuration", systemImage: "gearshape", action: showConfiguration)
+                .buttonStyle(.bordered)
+                .tint(.white)
         }
         .padding(40)
+        .frame(maxWidth: 430)
+        .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: GameTheme.cornerRadius))
+        .padding(GameTheme.largePadding)
+    }
+}
+
+// MARK: - Configuration
+
+struct ConfigurationView: View {
+    // Stores the selected volume level from 0 to 1.
+    @Binding var volume: Double
+
+    // Runs when the player returns to the starting screen.
+    let goBack: () -> Void
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Text("CONFIGURATION")
+                .font(.title2)
+                .bold()
+                .foregroundStyle(.white)
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label("Volume", systemImage: "speaker.wave.2")
+                        .foregroundStyle(.white)
+
+                    Spacer()
+
+                    Text("\(Int(volume * 100))%")
+                        .foregroundStyle(.white.secondary)
+                }
+
+                Slider(value: $volume, in: 0...1)
+                    .tint(GameTheme.accent)
+                    .accessibilityLabel("Volume")
+                    .accessibilityValue("\(Int(volume * 100)) percent")
+            }
+            .frame(width: 300)
+
+            Button("Back", systemImage: "chevron.left", action: goBack)
+                .buttonStyle(.bordered)
+                .tint(.white)
+        }
+        .padding(32)
         .frame(maxWidth: 430)
         .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: GameTheme.cornerRadius))
         .padding(GameTheme.largePadding)

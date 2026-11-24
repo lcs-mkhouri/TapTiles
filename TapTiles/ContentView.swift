@@ -2,7 +2,8 @@
 //  ContentView.swift
 //  TapTiles
 //
-//  Created by Michel Khouri on 2026-11-10.
+//  Created by Michel Khouri on 2026-11-04.
+//  This code was co-developed with GitHub Copilot.
 //
 
 import SwiftUI

@@ -38,6 +38,39 @@ final class GameViewModel {
     // Counts successful taps in a row.
     private(set) var streak = 0
 
+    // Counts correct tiles hit during the round.
+    private(set) var successfulHits = 0
+
+    // Counts wrong taps and tiles that reach the bottom.
+    private(set) var missedHits = 0
+
+    // Calculates the player's live hit accuracy.
+    var accuracy: Double {
+        let totalHits = successfulHits + missedHits
+        if totalHits == 0 {
+            return 100
+        }
+
+        return Double(successfulHits) / Double(totalHits) * 100
+    }
+
+    // Returns a letter rank based on live accuracy.
+    var rank: String {
+        if accuracy >= 95 {
+            return "S"
+        } else if accuracy >= 90 {
+            return "A"
+        } else if accuracy >= 80 {
+            return "B"
+        } else if accuracy >= 70 {
+            return "C"
+        } else if accuracy >= 60 {
+            return "D"
+        } else {
+            return "F"
+        }
+    }
+
     // Stores the player's current health.
     private(set) var health = 12
 
@@ -50,6 +83,9 @@ final class GameViewModel {
     // Indicates whether a tile reached the bottom without being tapped.
     private(set) var isGameOver = false
 
+    // Indicates whether the player completed the entire song.
+    private(set) var isWon = false
+
     // Remembers which lane contained the tile that ended the game.
     private(set) var missedColumn: Int?
 
@@ -59,14 +95,23 @@ final class GameViewModel {
     // Accumulates time until it is time to create another tile.
     private var spawnAccumulator = 0.0
 
+    // Stores the time between beats for the selected song.
+    private var beatInterval = 0.5
+
+    // Stores a repeating lane pattern for the selected song.
+    private var lanePattern: [Int] = [0, 1, 2, 3]
+
+    // Tracks the next lane in the selected song's pattern.
+    private var nextLaneIndex = 0
+
     var speed: Double {
-        // Starts tiles slowly and increases their speed as the score rises.
-        min(0.72, 0.28 + Double(score) * 0.006)
+        // Uses four beats of lead time so tiles reach the line with the rhythm.
+        0.72 / (beatInterval * 4)
     }
 
     var spawnInterval: Double {
-        // Spawns tiles more often as the score rises, but never too quickly.
-        max(0.38, 0.95 - Double(score) * 0.012)
+        // Uses the selected song's beat interval for tile timing.
+        beatInterval
     }
 
     // MARK: - Functions
@@ -99,7 +144,7 @@ final class GameViewModel {
 
     func startGame() {
         // A new game starts from zero after a game-over screen.
-        if isGameOver {
+        if isGameOver || isWon {
             resetGame()
         }
 
@@ -108,9 +153,33 @@ final class GameViewModel {
 
         // Clears the game-over state.
         isGameOver = false
+        isWon = false
 
         // Prevents a long paused duration from moving tiles immediately.
         lastUpdate = Date()
+    }
+
+    func configureSong(songId: String) {
+        // Uses a steady beat pattern that matches each song's tempo.
+        if songId == "expressions-of-the-mind" {
+            beatInterval = 0.667
+            lanePattern = [0, 2, 1, 3, 1, 2, 0, 3]
+        } else if songId == "rock-drums-swing" {
+            beatInterval = 0.375
+            lanePattern = [0, 1, 3, 1, 2, 3, 0, 2]
+        } else if songId == "progression1-glass-style" {
+            beatInterval = 0.627
+            lanePattern = [0, 3, 1, 2, 3, 1, 0, 2]
+        } else if songId == "tragic-serenade" {
+            beatInterval = 0.75
+            lanePattern = [0, 1, 2, 1, 3, 2, 1, 0]
+        } else {
+            beatInterval = 0.5
+            lanePattern = [0, 1, 2, 3]
+        }
+
+        spawnAccumulator = 0
+        nextLaneIndex = 0
     }
 
     func pauseGame() {
@@ -128,6 +197,10 @@ final class GameViewModel {
         // Resets the consecutive-hit count.
         streak = 0
 
+        // Resets hit accuracy for the new round.
+        successfulHits = 0
+        missedHits = 0
+
         // Restores the player's health to its maximum.
         health = Self.maximumHealth
 
@@ -136,18 +209,32 @@ final class GameViewModel {
 
         // Returns the game to its ready state.
         isGameOver = false
+        isWon = false
         isPlaying = false
 
         // Starts tile spawning from the beginning of its interval.
         spawnAccumulator = 0
+        nextLaneIndex = 0
 
         // Restarts time tracking from now.
         lastUpdate = Date()
     }
 
+    func winGame() {
+        // Stops gameplay after the selected song reaches the end.
+        isPlaying = false
+
+        // Shows the victory state only if the round is still active.
+        guard isGameOver == false else {
+            return
+        }
+
+        isWon = true
+    }
+
     func tap(column: Int) {
         // Ignores input when the game is paused or over.
-        guard isPlaying, isGameOver == false else {
+        guard isPlaying, isGameOver == false, isWon == false else {
             return
         }
 
@@ -158,8 +245,9 @@ final class GameViewModel {
             return
         }
 
-        // Awards one point for a successful tap.
-        score += 1
+        // Awards more points while the player maintains a combo.
+        let comboBonus = min(streak * 10, 500)
+        score += 100 + comboBonus
 
         // Restores one health point after a successful tap without exceeding the cap.
         health = min(Self.maximumHealth, health + 1)
@@ -172,6 +260,7 @@ final class GameViewModel {
 
         // Removes the tile that was successfully tapped.
         tiles.remove(at: tileIndex)
+        successfulHits += 1
     }
 
     private func update(elapsed: Double) {
@@ -213,22 +302,12 @@ final class GameViewModel {
     }
 
     private func spawnTile() {
-        // Collects the lanes that already contain a tile.
-        var occupiedColumns: Set<Int> = []
-        for tile in tiles {
-            occupiedColumns.insert(tile.column)
+        // Chooses the next lane from the selected song's fixed pattern.
+        let column = lanePattern[nextLaneIndex]
+        nextLaneIndex += 1
+        if nextLaneIndex >= lanePattern.count {
+            nextLaneIndex = 0
         }
-
-        // Builds a list of lanes that are currently empty.
-        var availableColumns: [Int] = []
-        for column in 0..<Self.columnCount {
-            if occupiedColumns.contains(column) == false {
-                availableColumns.append(column)
-            }
-        }
-
-        // Prefers an empty lane, but always has a random fallback.
-        let column = availableColumns.randomElement() ?? Int.random(in: 0..<Self.columnCount)
 
         // Adds a new tile at the top of the board.
         tiles.append(GameTile(column: column))
@@ -293,10 +372,14 @@ final class GameViewModel {
         missedColumn = tile.column
 
         // Removes four health points when a tile reaches the bottom.
-        loseHealth(amount: 4)
+        loseHealth(amount: 3)
     }
 
     private func loseHealth(amount: Int) {
+        // Breaks the combo and records the missed hit.
+        streak = 0
+        missedHits += 1
+
         // Removes the requested health amount without allowing health to become negative.
         health = max(0, health - amount)
 

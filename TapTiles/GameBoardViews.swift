@@ -11,6 +11,9 @@ struct GameBoardView: View {
     // Reads game state so the board can display the current tiles.
     let viewModel: GameViewModel
 
+    // Starts or restarts the round, including its selected audio.
+    let startRound: () -> Void
+
     var body: some View {
         // Reads the board's actual size so tiles can scale correctly.
         GeometryReader { proxy in
@@ -40,7 +43,7 @@ struct GameBoardView: View {
 
                 // Shows the ready or game-over overlay when the game is not running.
                 if viewModel.isPlaying == false {
-                    GameOverlayView(viewModel: viewModel)
+                    GameOverlayView(viewModel: viewModel, startRound: startRound)
                 }
             }
             // Rounds the corners of the entire board.

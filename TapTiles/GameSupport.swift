@@ -41,12 +41,42 @@ struct GameSong: Identifiable, Hashable {
     // Stores the artist or description shown below the title.
     let subtitle: String
 
+    // Stores the formatted length shown below the author.
+    let duration: String
+
+    // Stores the audio resource bundled with the app.
+    let audioFileName: String
+
     // Provides the songs currently available in the menu.
     static let availableSongs = [
-        GameSong(id: "neon-pulse", title: "Neon Pulse", subtitle: "2:48"),
-        GameSong(id: "midnight-drive", title: "Midnight Drive", subtitle: "3:12"),
-        GameSong(id: "pixel-rush", title: "Pixel Rush", subtitle: "1:56"),
-        GameSong(id: "Infinite madness", title: "Infinte Madness", subtitle: "∞")
+        GameSong(
+            id: "expressions-of-the-mind",
+            title: "Expressions of the Mind",
+            subtitle: "Piano loop by ShadyDave",
+            duration: "0:51",
+            audioFileName: "expressions-of-the-mind"
+        ),
+        GameSong(
+            id: "rock-drums-swing",
+            title: "Rock Drums Swing",
+            subtitle: "160 BPM by Carlos Eton",
+            duration: "2:58",
+            audioFileName: "rock-drums-swing"
+        ),
+        GameSong(
+            id: "progression1-glass-style",
+            title: "Progression 1",
+            subtitle: "Glass style by WKAlmar",
+            duration: "1:00",
+            audioFileName: "progression1-glass-style"
+        ),
+        GameSong(
+            id: "tragic-serenade",
+            title: "Tragic Serenade",
+            subtitle: "By Vira Miller",
+            duration: "2:33",
+            audioFileName: "tragic-serenade"
+        )
     ]
 }
 
